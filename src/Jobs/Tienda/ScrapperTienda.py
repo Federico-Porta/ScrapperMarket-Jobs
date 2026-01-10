@@ -135,17 +135,17 @@ def extract_product_detail(url, info_basica):
 
         # Construcción del objeto según tu formato pedido
         return {
-            "ean": gtin[-13:] if gtin else None,
-            "gtin": gtin,
+            "ProductEan": gtin[-13:] if gtin else None,
+            "ProductGtin": gtin,
             "sku": str(p.get("sku") or p.get("offers", {}).get("sku", "")),
-            "name": p.get("name") or info_basica["nombre_lista"],
-            "descripcion": p.get("description", "").replace('\n', ' ').strip(),
-            "brand": p.get("brand", {}).get("name") if isinstance(p.get("brand"), dict) else p.get("brand"),
-            "precio": float(p.get("offers", {}).get("price", 0)),
+            "ProductName": p.get("name") or info_basica["nombre_lista"],
+            "ProductDescripcion": p.get("description", "").replace('\n', ' ').strip(),
+            "ProductBrand": p.get("brand", {}).get("name") if isinstance(p.get("brand"), dict) else p.get("brand"),
+            "ProductPrice": float(p.get("offers", {}).get("price", 0)),
             "moneda": p.get("offers", {}).get("priceCurrency", "UYU"),
-            "rut": RUT_FIJO,
-            "imageUrl": p.get("image")[0] if isinstance(p.get("image"), list) else p.get("image"),
-            "categorias": list(info_basica["categorias"]) # Convertimos set a list para JSON
+            "storeRut": RUT_FIJO,
+            "productImageUrl": p.get("image")[0] if isinstance(p.get("image"), list) else p.get("image"),
+            "categoryName": list(info_basica["categorias"]) # Convertimos set a list para JSON
         }
     except:
         return None

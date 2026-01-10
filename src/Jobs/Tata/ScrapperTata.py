@@ -7,8 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 TATA_RUT = "210003270017"
 MAX_WORKERS = 4  # Los 4 hilos que pediste
 CATEGORIAS = [
-    "almacen", "bebidas", "congelados", "frescos", "limpieza", "perfumeria",
-    "bebes", "ferreteria", "mascotas", "hogar-y-bazar", "textil"
+    "almacen", "bebidas", "congelados", "frescos", "limpieza"
 ]
 
 def extraer_categoria(categoria_slug):
