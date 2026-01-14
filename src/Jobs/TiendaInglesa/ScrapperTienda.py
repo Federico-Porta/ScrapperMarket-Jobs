@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
 # --- CONFIGURACIÓN ---
-RUT_FIJO = 210214220011
+RUT_FIJO = 210094030014
 SUPERMERCADO_NOMBRE = "Tienda Inglesa"
 BASE_URL = "https://www.tiendainglesa.com.uy"
 
@@ -135,13 +135,13 @@ def extract_product_detail(url, info_basica):
 
         # Construcción del objeto según tu formato pedido
         return {
-            "ProductEan": gtin[-13:] if gtin else None,
-            "ProductGtin": gtin,
+            "productEan": gtin[-13:] if gtin else None,
+            "productGtin": gtin,
             "sku": str(p.get("sku") or p.get("offers", {}).get("sku", "")),
-            "ProductName": p.get("name") or info_basica["nombre_lista"],
-            "ProductDescripcion": p.get("description", "").replace('\n', ' ').strip(),
-            "ProductBrand": p.get("brand", {}).get("name") if isinstance(p.get("brand"), dict) else p.get("brand"),
-            "ProductPrice": float(p.get("offers", {}).get("price", 0)),
+            "productName": p.get("name") or info_basica["nombre_lista"],
+            "productDescripcion": p.get("description", "").replace('\n', ' ').strip(),
+            "productBrand": p.get("brand", {}).get("name") if isinstance(p.get("brand"), dict) else p.get("brand"),
+            "productPrice": float(p.get("offers", {}).get("price", 0)),
             "moneda": p.get("offers", {}).get("priceCurrency", "UYU"),
             "storeRut": RUT_FIJO,
             "productImageUrl": p.get("image")[0] if isinstance(p.get("image"), list) else p.get("image"),
