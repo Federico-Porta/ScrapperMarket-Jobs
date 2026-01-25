@@ -1,14 +1,32 @@
 import requests
 import json
 import time
+import os
 from concurrent.futures import ThreadPoolExecutor
 
-# Configuración
+# ---------------- CONFIG ----------------
+
 TATA_RUT = "210003270017"
-MAX_WORKERS = 4  # Los 4 hilos que pediste
-CATEGORIAS = [
-    "almacen", "bebidas", "congelados", "frescos", "limpieza"
-]
+MAX_WORKERS = 10
+CATEGORIAS = ["Almacen",
+              "Frescos",
+              "Congelados",
+              "Limpieza",
+              "Bebidas",
+              "Perfumeria",
+              "Bebes",
+              "Papeleria",
+              "Ferreteria"]
+
+# Paths robustos
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "JsonProducts"))
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "productos_tata.json")
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# ---------------------------------------
+
 
 def extraer_categoria(categoria_slug):
     productos_categoria = []
@@ -31,30 +49,35 @@ def extraer_categoria(categoria_slug):
             ]
         }
 
-        params = {"operationName": "ProductsQuery", "variables": json.dumps(variables)}
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        params = {
+            "operationName": "ProductsQuery",
+            "variables": json.dumps(variables)
+        }
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        }
 
         try:
             response = requests.get(url, params=params, headers=headers, timeout=20)
             data = response.json()
 
             search_data = data.get('data', {}).get('search', {})
-            if not search_data: break
+            if not search_data:
+                break
 
             edges = search_data.get('products', {}).get('edges', [])
             total_count = search_data.get('products', {}).get('pageInfo', {}).get('totalCount', 0)
 
-            if not edges: break
+            if not edges:
+                break
 
             for edge in edges:
                 node = edge.get('node', {})
                 offers = node.get('offers', {}).get('offers', [{}])[0]
 
-                # Mapeo al formato solicitado
                 productos_categoria.append({
-                    "productEan": node.get('gtin'),
-                    "productGtin": node.get('gtin'),
-                    "sku": node.get('sku'),
+                    "idWeb": node.get('gtin'),
                     "productName": node.get('name'),
                     "productDescription": node.get('name'),
                     "productBrand": node.get('brand', {}).get('name'),
@@ -69,7 +92,6 @@ def extraer_categoria(categoria_slug):
                 break
 
             after += page_size
-            # Delay mínimo para no saturar la conexión compartida de los hilos
             time.sleep(0.2)
 
         except Exception as e:
@@ -79,28 +101,25 @@ def extraer_categoria(categoria_slug):
     print(f"✅ [Hilo Finalizado] {categoria_slug}: {len(productos_categoria)} items.")
     return productos_categoria
 
+
 def ejecutar_scrapper_masivo():
     todos_los_productos = []
-
     start_time = time.time()
 
-    # Uso de ThreadPoolExecutor para los 4 hilos
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        # Mapea la función a la lista de categorías
         resultados = list(executor.map(extraer_categoria, CATEGORIAS))
-
-        # Unificar listas
         for lista in resultados:
             todos_los_productos.extend(lista)
 
-    # Guardar resultado final
-    with open('full_market_tata.json', 'w', encoding='utf-8') as f:
+    # Guardar resultado final en JsonProducts
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(todos_los_productos, f, ensure_ascii=False, indent=4)
 
     total_time = time.time() - start_time
     print(f"\n--- SCRAPING COMPLETADO EN {total_time:.2f} SEGUNDOS ---")
     print(f"📦 Total de productos recolectados: {len(todos_los_productos)}")
-    print(f"📂 Archivo generado: full_market_tata.json")
+    print(f"📂 Archivo generado: {OUTPUT_FILE}")
+
 
 if __name__ == "__main__":
     ejecutar_scrapper_masivo()

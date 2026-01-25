@@ -10,7 +10,7 @@ API_KEY = "clave_secreta_optify"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 JSON_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "Jobs", "JsonProductos"))
-BATCH_DIR = os.path.join(BASE_DIR, "Batches")  # Carpeta para guardar batches fallidos
+BATCH_DIR = os.path.join(BASE_DIR, "../Procesos/Batches")  # Carpeta para guardar batches fallidos
 
 BATCH_SIZE = 100
 SLEEP_SECONDS = 0.5

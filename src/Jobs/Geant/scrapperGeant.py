@@ -6,11 +6,19 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # --- CONFIGURACIÓN GÉANT ---
-GEANT_RUT = 214011530013
+GEANT_RUT = 213458920015
 BASE_URL = "https://www.geant.com.uy"
 MAX_WORKERS = 15
 
-CATEGORIAS = ["almacen", "congelados", "limpieza"]
+CATEGORIAS = ["Almacen",
+               "Frescos",
+               "Congelados",
+               "Limpieza",
+               "Bebidas",
+               "Perfumeria",
+               "Bebes",
+               "Papeleria",
+               "Ferreteria"]
 
 scraper = cloudscraper.create_scraper()
 
@@ -53,9 +61,7 @@ def extraer_detalle_producto(url_relativa, nombre_categoria):
             return None
 
         return {
-            "productEan": p.get("gtin") or p.get("sku"),
-            "productGtin": p.get("gtin") or p.get("sku"),
-            "sku": p.get("sku"),
+            "idWeb": p.get("gtin") or p.get("sku"),
             "productName": p.get("name"),
             "productDescription": p.get("description", "").replace("\n", " ").strip(),
             "productBrand": p.get("brand", {}).get("name")
