@@ -36,10 +36,22 @@ CATEGORIAS = {
 # =========================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../QA", "JsonProducts"))
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "../../QA/Tata/productos_tata.json")
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# JOBS_DIR:
+# Carpeta superior donde se guardan los JSON de salida
+JOBS_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+
+# JSON_DIR:
+# Carpeta donde se escribirá el archivo final
+JSON_DIR = os.path.join(JOBS_DIR, "JsonProducts")
+
+# Se asegura que exista la carpeta
+os.makedirs(JSON_DIR, exist_ok=True)
+
+# Archivo final con todos los productos
+OUTPUT_JSON = os.path.join(JSON_DIR, "productos_tata.json")
+
+
 
 # =========================================================
 # FUNCIÓN: extraer_categoria
@@ -182,7 +194,7 @@ def ejecutar_scrapper_masivo():
     todos_los_productos = deduplicar_productos(todos_los_productos)
     total_despues = len(todos_los_productos)
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+    with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(todos_los_productos, f, ensure_ascii=False, indent=4)
 
     total_time = time.time() - start_time
@@ -190,7 +202,7 @@ def ejecutar_scrapper_masivo():
     print(f"\n--- SCRAPING COMPLETADO EN {total_time:.2f} SEGUNDOS ---")
     print(f"📦 Productos antes deduplicar: {total_antes}")
     print(f"📦 Productos finales únicos: {total_despues}")
-    print(f"📂 Archivo generado: {OUTPUT_FILE}")
+    print(f"📂 Archivo generado: {OUTPUT_JSON}")
 
 # =========================================================
 # PUNTO DE ENTRADA

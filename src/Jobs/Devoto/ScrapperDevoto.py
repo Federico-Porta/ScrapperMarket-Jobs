@@ -22,20 +22,19 @@ CATEGORIAS = {
     "perfumeria": "https://www.devoto.com.uy/products/category/perfumeria/1211"
 }
 
-# BASE_DIR:
-# Carpeta donde está ubicado este script
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # JOBS_DIR:
-# Carpeta padre donde se guardan los resultados de los scrapers
-JOBS_DIR = os.path.abspath(os.path.join(BASE_DIR, "../.."))
+# Carpeta superior donde se guardan los JSON de salida
+JOBS_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
 # JSON_DIR:
-# Carpeta donde se guardará el archivo JSON final
-JSON_DIR = os.path.join(JOBS_DIR, "../../QA/JsonProducts")
+# Carpeta donde se escribirá el archivo final
+JSON_DIR = os.path.join(JOBS_DIR, "JsonProducts")
 
-# Crea la carpeta si no existe
+# Se asegura que exista la carpeta
 os.makedirs(JSON_DIR, exist_ok=True)
+
 
 # OUTPUT_JSON:
 # Ruta completa del archivo final con todos los productos
