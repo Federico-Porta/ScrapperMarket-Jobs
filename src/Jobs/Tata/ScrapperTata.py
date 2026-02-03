@@ -4,49 +4,78 @@ import time
 import os
 from concurrent.futures import ThreadPoolExecutor
 
-# ---------------- CONFIG ----------------
+# =========================================================
+# CONFIGURACIÓN GENERAL DEL SCRAPER TATA
+# =========================================================
 
 TATA_RUT = "210003270017"
 MAX_WORKERS = 10
-CATEGORIAS = ["Almacen",
-              "Frescos",
-              "Congelados",
-              "Limpieza",
-              "Bebidas",
-              "Perfumeria",
-              "Bebes",
-              "Papeleria",
-              "Ferreteria"]
 
-# Paths robustos
+CATEGORIAS = {
+    "Almacen": [
+        "Desayuno",
+        "snacks",
+        "aceites-y-aderezos",
+        "conservas",
+        "arroz-harina-y-legumbres",
+        "sopas-caldos-y-pure",
+        "golosinas-y-chocolates",
+        "panificados",
+        "pastas-y-salsas",
+        "cigarros"
+    ],
+    "Frescos": [],
+    "Congelados": [],
+    "Limpieza": [],
+    "Bebidas": [],
+    "Perfumeria": []
+}
+
+# =========================================================
+# CONFIGURACIÓN DE RUTAS Y ARCHIVOS
+# =========================================================
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "JsonProducts"))
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "productos_tata.json")
+OUTPUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../QA", "JsonProducts"))
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "../../QA/Tata/productos_tata.json")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# ---------------------------------------
+# =========================================================
+# FUNCIÓN: extraer_categoria
+# =========================================================
+def extraer_categoria(categoria_padre, subcategoria_slug=None):
 
-
-def extraer_categoria(categoria_slug):
     productos_categoria = []
     page_size = 50
     after = 0
 
-    print(f"🚀 [Hilo Iniciado] Extrayendo: {categoria_slug}")
+    nombre_log = (
+        f"{categoria_padre} → {subcategoria_slug}"
+        if subcategoria_slug else categoria_padre
+    )
+
+    print(f"🚀 [Hilo Iniciado] Extrayendo: {nombre_log}")
 
     while True:
         url = "https://www.tata.com.uy/api/graphql"
+
+        selected_facets = [
+            {"key": "channel", "value": "{\"salesChannel\":\"4\",\"regionId\":\"U1cjdGF0YXV5bW9udGV2aWRlbw==\"}"},
+            {"key": "locale", "value": "es-UY"}
+        ]
+
+        if subcategoria_slug:
+            selected_facets.insert(0, {"key": "category-2", "value": subcategoria_slug})
+        else:
+            selected_facets.insert(0, {"key": "category-1", "value": categoria_padre})
+
         variables = {
             "first": page_size,
             "after": str(after),
             "sort": "score_desc",
             "term": "",
-            "selectedFacets": [
-                {"key": "category-1", "value": categoria_slug},
-                {"key": "channel", "value": "{\"salesChannel\":\"4\",\"regionId\":\"U1cjdGF0YXV5bW9udGV2aWRlbw==\"}"},
-                {"key": "locale", "value": "es-UY"}
-            ]
+            "selectedFacets": selected_facets
         }
 
         params = {
@@ -59,7 +88,13 @@ def extraer_categoria(categoria_slug):
         }
 
         try:
-            response = requests.get(url, params=params, headers=headers, timeout=20)
+            response = requests.get(
+                url,
+                params=params,
+                headers=headers,
+                timeout=20
+            )
+
             data = response.json()
 
             search_data = data.get('data', {}).get('search', {})
@@ -76,6 +111,9 @@ def extraer_categoria(categoria_slug):
                 node = edge.get('node', {})
                 offers = node.get('offers', {}).get('offers', [{}])[0]
 
+                link = node.get("slug")
+                product_url = f"https://www.tata.com.uy/{link}/p" if link else None
+
                 productos_categoria.append({
                     "idWeb": node.get('gtin'),
                     "productName": node.get('name'),
@@ -84,8 +122,9 @@ def extraer_categoria(categoria_slug):
                     "productPrice": offers.get('price'),
                     "moneda": node.get('offers', {}).get('priceCurrency', 'UYU'),
                     "storeRut": TATA_RUT,
+                    "urlProduct": product_url,
                     "productImageUrl": node.get('image', [{}])[0].get('url'),
-                    "categoryName": categoria_slug.replace("-", " ").capitalize()
+                    "categoryName": categoria_padre   # 👈 SIEMPRE categoría padre
                 })
 
             if len(productos_categoria) >= total_count:
@@ -95,31 +134,66 @@ def extraer_categoria(categoria_slug):
             time.sleep(0.2)
 
         except Exception as e:
-            print(f"❌ Error en {categoria_slug}: {e}")
+            print(f"❌ Error en {nombre_log}: {e}")
             break
 
-    print(f"✅ [Hilo Finalizado] {categoria_slug}: {len(productos_categoria)} items.")
+    print(f"✅ [Hilo Finalizado] {nombre_log}: {len(productos_categoria)} items.")
     return productos_categoria
 
+# =========================================================
+# FUNCIÓN: DEDUPLICAR POR GTIN
+# =========================================================
+def deduplicar_productos(productos):
+    productos_unicos = {}
+    for producto in productos:
+        gtin = producto.get("idWeb")
+        if gtin:
+            productos_unicos[gtin] = producto
+    return list(productos_unicos.values())
 
+# =========================================================
+# FUNCIÓN PRINCIPAL
+# =========================================================
 def ejecutar_scrapper_masivo():
+
     todos_los_productos = []
     start_time = time.time()
 
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        resultados = list(executor.map(extraer_categoria, CATEGORIAS))
-        for lista in resultados:
-            todos_los_productos.extend(lista)
+    futures = []
 
-    # Guardar resultado final en JsonProducts
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        for categoria, subcategorias in CATEGORIAS.items():
+
+            if subcategorias:
+                for sub in subcategorias:
+                    futures.append(
+                        executor.submit(extraer_categoria, categoria, sub)
+                    )
+            else:
+                futures.append(
+                    executor.submit(extraer_categoria, categoria)
+                )
+
+        for future in futures:
+            todos_los_productos.extend(future.result())
+
+    # 🔥 DEDUPLICADO FINAL
+    total_antes = len(todos_los_productos)
+    todos_los_productos = deduplicar_productos(todos_los_productos)
+    total_despues = len(todos_los_productos)
+
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(todos_los_productos, f, ensure_ascii=False, indent=4)
 
     total_time = time.time() - start_time
+
     print(f"\n--- SCRAPING COMPLETADO EN {total_time:.2f} SEGUNDOS ---")
-    print(f"📦 Total de productos recolectados: {len(todos_los_productos)}")
+    print(f"📦 Productos antes deduplicar: {total_antes}")
+    print(f"📦 Productos finales únicos: {total_despues}")
     print(f"📂 Archivo generado: {OUTPUT_FILE}")
 
-
+# =========================================================
+# PUNTO DE ENTRADA
+# =========================================================
 if __name__ == "__main__":
     ejecutar_scrapper_masivo()

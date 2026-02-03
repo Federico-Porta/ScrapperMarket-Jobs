@@ -9,13 +9,15 @@ import shutil
 # =========================================================
 
 # URL de la API donde se envían los productos
-# En este caso es un endpoint local, pero en cloud
-# normalmente será una URL pública o privada
-API_URL = "http://localhost:8080/api/products/import"
+# valída si está en la nube y también por si lo estamos ejecutando en local
+API_URL = os.getenv(
+    "API_URL",
+    "http://localhost:8080/api/products/import"
+)
 
 # Clave de seguridad para autenticar la petición
-# Se envía en el header X-API-KEY
-API_KEY = "clave_secreta_optify"
+# Se envía en el header X-API-KEY o lo obtiene de la variable de entorno
+API_KEY = os.getenv("API_KEY", "clave_secreta_optify")
 
 # BASE_DIR:
 # Ruta absoluta de la carpeta donde está este script
