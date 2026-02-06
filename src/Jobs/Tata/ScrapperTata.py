@@ -127,7 +127,7 @@ def extraer_categoria(categoria_padre, subcategoria_slug=None):
                 product_url = f"https://www.tata.com.uy/{link}/p" if link else None
 
                 productos_categoria.append({
-                    "idWeb": node.get('gtin'),
+                    "idWeb": int(node['gtin']) if node.get('gtin') else None,
                     "productName": node.get('name'),
                     "productDescription": node.get('name'),
                     "productBrand": node.get('brand', {}).get('name'),

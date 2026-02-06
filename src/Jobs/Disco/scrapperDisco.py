@@ -105,7 +105,7 @@ def extraer_productos_categoria(nombre_categoria, url):
             img = img_tag["src"] if img_tag else None
 
             productos.append({
-                "idWeb": link.split("/")[-1],
+                "idWeb": int(link.split("/")[-1]),
                 "productName": nombre,
                 "productDescription": "",
                 "productBrand": marca,

@@ -117,7 +117,7 @@ def extraer_detalle_producto(url_relativa, nombre_categoria):
 
         # Devuelve el producto en formato estándar
         return {
-            "idWeb": p.get("gtin") or p.get("sku"),
+            "idWeb": int(p['gtin']) if p.get('gtin') else None,
             "productName": p.get("name"),
             "productDescription": p.get("description", "").replace("\n", " ").strip(),
             "productBrand": p.get("brand", {}).get("name")

@@ -234,7 +234,7 @@ def extract_product_detail(url, info_basica):
             return None
 
         return {
-            "idWeb": p.get("productId"),
+            "idWeb": int(p.get("productId")),
             "productName": p.get("name") or info_basica["nombre_lista"],
             "productDescription": (p.get("description") or "").replace("\n", " ").strip(),
             "productBrand": p.get("brand", {}).get("name")
